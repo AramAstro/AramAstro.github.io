@@ -25,7 +25,7 @@ layout: compress
         animation-delay: var(--delay);
       }
     </style>
-    <script>
+<script>
       document.addEventListener('DOMContentLoaded', function() {
         const canvas = document.getElementById('orbitCanvas');
         const ctx    = canvas.getContext('2d');
@@ -38,7 +38,6 @@ layout: compress
         resize();
         window.addEventListener('resize', resize);
 
-        /* ── 별 ── */
         const TWINKLE_SPEED = 0.7;
         const ST = [
           { color:'#c0392b', freq:52,  size:[1.2,2.0], opMax:0.55, opMin:0.08, dur:[4,8] },
@@ -78,7 +77,6 @@ layout: compress
           sl.appendChild(d);
         });
 
-        /* ── 궤도 ── */
         const ORBITS = [
           { cxR:0.96, cyR:1.22, rxR:0.52, ryR:0.40, rot:-0.06, period:20, glowArc:0.22, dashColor:[148,158,172], dashOp:0.22, glowRgb:'138,152,170', glowOp:0.82 },
           { cxR:0.94, cyR:1.16, rxR:0.70, ryR:0.60, rot:0.10,  period:30, glowArc:0.18, dashColor:[168,128,100], dashOp:0.17, glowRgb:'182,122,82',  glowOp:0.68 },
@@ -109,7 +107,7 @@ layout: compress
           });
         }
 
-        let startTs=null;
+        let startTs = null;
         function loop(ts) {
           if(!startTs) startTs=ts;
           const elapsed=(ts-startTs)/1000;
@@ -144,7 +142,7 @@ layout: compress
           requestAnimationFrame(loop);
         }
         requestAnimationFrame(loop);
-      };
+      });
     </script>
     <!-- ── 별 + 궤도 배경 끝 ── -->
 
