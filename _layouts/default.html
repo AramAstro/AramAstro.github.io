@@ -26,7 +26,7 @@ layout: compress
       }
     </style>
     <script>
-      (function() {
+      document.addEventListener('DOMContentLoaded', function() {
         const canvas = document.getElementById('orbitCanvas');
         const ctx    = canvas.getContext('2d');
         const sl     = document.getElementById('starLayer');
@@ -54,7 +54,7 @@ layout: compress
         ST.forEach(s => { for(let i=0;i<Math.round(s.freq);i++) pool.push(s); });
         const placed = [];
         let att = 0;
-        while(placed.length < 28 && att < 2000) {
+        while(placed.length < 50 && att < 2000) {
           att++;
           const x = rand(2,98), y = rand(2,96);
           if(placed.every(p => Math.hypot(p.x-x,p.y-y) > 7)) {
@@ -142,7 +142,7 @@ layout: compress
             }
           });
           requestAnimationFrame(loop);
-        }
+        });
         requestAnimationFrame(loop);
       })();
     </script>
