@@ -3,8 +3,6 @@ icon: fas fa-book
 order: 3
 ---
 
-# Publications and Presentations
-
 ## Journal Articles
 
 Lee, A., Kavelaars, J. J., Teimoorinia, H., Fraser, W., & Ashton, E. (2025).

@@ -3,8 +3,6 @@ icon: fas fa-file
 order: 5
 ---
 
-# Curriculum Vitae
-
 [Download CV (PDF)](/assets/files/cv.pdf)
 
 A more detailed version of my background is available in the PDF above.
