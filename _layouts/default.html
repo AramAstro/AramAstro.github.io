@@ -91,18 +91,44 @@
 
       function drawDashed() {
           const W=canvas.width, H=canvas.height;
-          ORBITS.forEach(o => {
-            const [r,g,b]=o.dashColor;
-            ctx.save();
-            ctx.setLineDash([5,11]);
-            ctx.strokeStyle=`rgba(${r},${g},${b},${o.dashOp})`;
-            ctx.lineWidth=0.9;
-            ctx.translate(o.cxR*W,o.cyR*H);
-            ctx.rotate(o.rot);
+ORBITS.forEach(o => {
+            const cx=o.cxR*W, cy=o.cyR*H, rx=o.rxR*W, ry=o.ryR*H;
+            const progress=(elapsed/o.period)%1.0;
+            const headAngle=-progress*Math.PI*2;
+
+            // head 점 위치 계산 (rotation 적용)
+            const ex=rx*Math.cos(headAngle), ey=ry*Math.sin(headAngle);
+            const hx=cx+ex*Math.cos(o.rot)-ey*Math.sin(o.rot);
+            const hy=cy+ex*Math.sin(o.rot)+ey*Math.cos(o.rot);
+
+            // 화면 밖이면 스킵
+            if(hx<-20||hx>W+20||hy<-20||hy>H+20) return;
+
+            // 꼬리 — head 뒤로 짧은 호
+            const tailSpan=0.12;
+            const STEPS=8;
+            for(let i=0;i<STEPS;i++) {
+              const t0=headAngle+(tailSpan*i/STEPS);
+              const t1=headAngle+(tailSpan*(i+1)/STEPS);
+              const frac=1-(i/STEPS);
+              const op=o.glowOp*Math.pow(frac,2)*0.7;
+              ctx.save();
+              ctx.translate(cx,cy);
+              ctx.rotate(o.rot);
+              ctx.beginPath();
+              ctx.ellipse(0,0,rx,ry,0,t0,t1);
+              ctx.strokeStyle=`rgba(${o.glowRgb},${op.toFixed(3)})`;
+              ctx.lineWidth=1.2;
+              ctx.setLineDash([]);
+              ctx.stroke();
+              ctx.restore();
+            }
+
+            // head 점
             ctx.beginPath();
-            ctx.ellipse(0,0,o.rxR*W,o.ryR*H,0,0,Math.PI*2);
-            ctx.stroke();
-            ctx.restore();
+            ctx.arc(hx,hy,2.5,0,Math.PI*2);
+            ctx.fillStyle=`rgba(${o.glowRgb},${o.glowOp})`;
+            ctx.fill();
           });
         }
 
