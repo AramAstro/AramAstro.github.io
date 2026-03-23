@@ -24,7 +24,7 @@
         animation-delay: var(--delay);
       }
     </style>
-<script>
+    <script>
       document.addEventListener('DOMContentLoaded', function() {
         const canvas = document.getElementById('orbitCanvas');
         const ctx    = canvas.getContext('2d');
@@ -37,6 +37,7 @@
         resize();
         window.addEventListener('resize', resize);
 
+        /* ── 별: 스펙트럼형별 색·빈도·크기·점멸 속도 ── */
         const TWINKLE_SPEED = 0.7;
         const ST = [
           { color:'#c0392b', freq:52,  size:[1.2,2.0], opMax:0.55, opMin:0.08, dur:[4,8] },
@@ -47,123 +48,112 @@
           { color:'#a8b8e8', freq:1.5, size:[2.2,3.2], opMax:0.75, opMin:0.13, dur:[2,5] },
           { color:'#7090e0', freq:0.5, size:[2.8,3.8], opMax:0.85, opMin:0.15, dur:[2,4] },
         ];
-        const rand = (a,b) => a + Math.random()*(b-a);
+        const rand = (a, b) => a + Math.random() * (b - a);
         const pool = [];
-        ST.forEach(s => { for(let i=0;i<Math.round(s.freq);i++) pool.push(s); });
+        ST.forEach(s => { for (let i = 0; i < Math.round(s.freq); i++) pool.push(s); });
         const placed = [];
         let att = 0;
-        while(placed.length < 50 && att < 2000) {
+        while (placed.length < 50 && att < 2000) {
           att++;
-          const x = rand(2,98), y = rand(2,96);
-          if(placed.every(p => Math.hypot(p.x-x,p.y-y) > 7)) {
-            const s = pool[Math.floor(Math.random()*pool.length)];
-            placed.push({x,y,r:rand(s.size[0],s.size[1]),s});
+          const x = rand(2, 98), y = rand(2, 96);
+          if (placed.every(p => Math.hypot(p.x - x, p.y - y) > 7)) {
+            const s = pool[Math.floor(Math.random() * pool.length)];
+            placed.push({ x, y, r: rand(s.size[0], s.size[1]), s });
           }
         }
-        placed.forEach(({x,y,r,s}) => {
+        placed.forEach(({ x, y, r, s }) => {
           const d = document.createElement('div');
           d.className = 'star-dot';
-          const dur = (rand(s.dur[0],s.dur[1])/TWINKLE_SPEED).toFixed(1);
+          const dur = (rand(s.dur[0], s.dur[1]) / TWINKLE_SPEED).toFixed(1);
           d.style.cssText = [
-            `left:${x}%`,`top:${y}%`,
-            `width:${r*2}px`,`height:${r*2}px`,
-            `margin-left:-${r}px`,`margin-top:-${r}px`,
+            `left:${x}%`, `top:${y}%`,
+            `width:${r*2}px`, `height:${r*2}px`,
+            `margin-left:-${r}px`, `margin-top:-${r}px`,
             `background:${s.color}`,
             `--dur:${dur}s`,
-            `--delay:-${rand(0,7).toFixed(1)}s`,
-            `--op-max:${s.opMax}`,`--op-min:${s.opMin}`
+            `--delay:-${rand(0, 7).toFixed(1)}s`,
+            `--op-max:${s.opMax}`, `--op-min:${s.opMin}`
           ].join(';');
           sl.appendChild(d);
         });
 
+        /* ── 궤도: BB(회청)·IR(회적)·RR(진홍) ── */
         const ORBITS = [
-          { cxR:0.96, cyR:1.22, rxR:0.52, ryR:0.40, rot:-0.06, period:20, glowArc:0.015, dashColor:[148,158,172], dashOp:0.22, glowRgb:'138,152,170', glowOp:0.82 },
-          { cxR:0.94, cyR:1.16, rxR:0.70, ryR:0.60, rot:0.10,  period:30, glowArc:0.012, dashColor:[168,128,100], dashOp:0.17, glowRgb:'182,122,82',  glowOp:0.68 },
-          { cxR:0.90, cyR:1.18, rxR:0.95, ryR:0.88, rot:0.04,  period:42, glowArc:0.010, dashColor:[175,88,72],   dashOp:0.13, glowRgb:'192,74,58',   glowOp:0.52 },
+          { cxR:0.96, cyR:1.22, rxR:0.52, ryR:0.40, rot:-0.06, period:20, dashColor:[148,158,172], dashOp:0.22, glowRgb:'138,152,170', glowOp:0.82 },
+          { cxR:0.94, cyR:1.16, rxR:0.70, ryR:0.60, rot:0.10,  period:30, dashColor:[168,128,100], dashOp:0.17, glowRgb:'182,122,82',  glowOp:0.68 },
+          { cxR:0.90, cyR:1.18, rxR:0.95, ryR:0.88, rot:0.04,  period:42, dashColor:[175,88,72],   dashOp:0.13, glowRgb:'192,74,58',   glowOp:0.52 },
         ];
 
-        function isOnScreen(cx,cy,rx,ry,rot,a,m=20) {
-          const ex=rx*Math.cos(a), ey=ry*Math.sin(a);
-          const x=cx+ex*Math.cos(rot)-ey*Math.sin(rot);
-          const y=cy+ex*Math.sin(rot)+ey*Math.cos(rot);
-          return x>=-m&&x<=window.innerWidth+m&&y>=-m&&y<=window.innerHeight+m;
-        }
-
-      function drawDashed() {
-          const W=canvas.width, H=canvas.height;
-ORBITS.forEach(o => {
-            const cx=o.cxR*W, cy=o.cyR*H, rx=o.rxR*W, ry=o.ryR*H;
-            const progress=(elapsed/o.period)%1.0;
-            const headAngle=-progress*Math.PI*2;
-
-            // head 점 위치 계산 (rotation 적용)
-            const ex=rx*Math.cos(headAngle), ey=ry*Math.sin(headAngle);
-            const hx=cx+ex*Math.cos(o.rot)-ey*Math.sin(o.rot);
-            const hy=cy+ex*Math.sin(o.rot)+ey*Math.cos(o.rot);
-
-            // 화면 밖이면 스킵
-            if(hx<-20||hx>W+20||hy<-20||hy>H+20) return;
-
-            // 꼬리 — head 뒤로 짧은 호
-            const tailSpan=0.12;
-            const STEPS=8;
-            for(let i=0;i<STEPS;i++) {
-              const t0=headAngle+(tailSpan*i/STEPS);
-              const t1=headAngle+(tailSpan*(i+1)/STEPS);
-              const frac=1-(i/STEPS);
-              const op=o.glowOp*Math.pow(frac,2)*0.7;
-              ctx.save();
-              ctx.translate(cx,cy);
-              ctx.rotate(o.rot);
-              ctx.beginPath();
-              ctx.ellipse(0,0,rx,ry,0,t0,t1);
-              ctx.strokeStyle=`rgba(${o.glowRgb},${op.toFixed(3)})`;
-              ctx.lineWidth=1.2;
-              ctx.setLineDash([]);
-              ctx.stroke();
-              ctx.restore();
-            }
-
-            // head 점
+        /* 점선 궤도 그리기 — 정적 배경 */
+        function drawDashed(W, H) {
+          ORBITS.forEach(o => {
+            const [r,g,b] = o.dashColor;
+            ctx.save();
+            ctx.setLineDash([5, 11]);
+            ctx.strokeStyle = `rgba(${r},${g},${b},${o.dashOp})`;
+            ctx.lineWidth = 0.9;
+            ctx.translate(o.cxR*W, o.cyR*H);
+            ctx.rotate(o.rot);
             ctx.beginPath();
-            ctx.arc(hx,hy,2.5,0,Math.PI*2);
-            ctx.fillStyle=`rgba(${o.glowRgb},${o.glowOp})`;
-            ctx.fill();
+            ctx.ellipse(0, 0, o.rxR*W, o.ryR*H, 0, 0, Math.PI*2);
+            ctx.stroke();
+            ctx.restore();
           });
         }
 
+        /* 애니메이션 루프 */
         let startTs = null;
         function loop(ts) {
-          if(!startTs) startTs=ts;
-          const elapsed=(ts-startTs)/1000;
-          const W=canvas.width, H=canvas.height;
-          ctx.clearRect(0,0,W,H);
-          drawDashed();
+          if (!startTs) startTs = ts;
+          const elapsed = (ts - startTs) / 1000;
+          const W = canvas.width, H = canvas.height;
+
+          ctx.clearRect(0, 0, W, H);
+          drawDashed(W, H);
+
+          /* 각 궤도마다 점(TNO) + 짧은 꼬리 그리기 */
           ORBITS.forEach(o => {
-            const cx=o.cxR*W, cy=o.cyR*H, rx=o.rxR*W, ry=o.ryR*H;
-            const progress=(elapsed/o.period)%1.0;
-            const headAngle=-progress*Math.PI*2;
-            const tailSpan=0.08;
-            const STEPS=5;
-            for(let i=0;i<STEPS;i++) {
-              const t1=headAngle+(tailSpan*i/STEPS);
-              const t0=headAngle+(tailSpan*(i+1)/STEPS);
-              const tMid=(t0+t1)/2;
-              if(!isOnScreen(cx,cy,rx,ry,o.rot,tMid)) continue;
-              const frac=(i+1)/STEPS;
-              const op=o.glowOp*Math.pow(frac,1.4);
+            const cx = o.cxR*W, cy = o.cyR*H;
+            const rx = o.rxR*W, ry = o.ryR*H;
+            const progress = (elapsed / o.period) % 1.0;
+            const headAngle = -progress * Math.PI * 2; // 오른쪽→왼쪽
+
+            /* head 점의 실제 캔버스 좌표 */
+            const ex = rx * Math.cos(headAngle);
+            const ey = ry * Math.sin(headAngle);
+            const hx = cx + ex * Math.cos(o.rot) - ey * Math.sin(o.rot);
+            const hy = cy + ex * Math.sin(o.rot) + ey * Math.cos(o.rot);
+
+            /* 화면 밖이면 점·꼬리 모두 스킵 */
+            if (hx < -20 || hx > W+20 || hy < -20 || hy > H+20) return;
+
+            /* 꼬리: head 뒤로 짧은 호, 점점 fade */
+            const tailSpan = 0.10;
+            const STEPS = 8;
+            for (let i = 0; i < STEPS; i++) {
+              const t0 = headAngle + (tailSpan * i / STEPS);
+              const t1 = headAngle + (tailSpan * (i+1) / STEPS);
+              const frac = 1 - (i / STEPS); // head 쪽이 밝음
+              const op = o.glowOp * Math.pow(frac, 2) * 0.6;
               ctx.save();
-              ctx.translate(cx,cy);
+              ctx.translate(cx, cy);
               ctx.rotate(o.rot);
               ctx.beginPath();
-              ctx.ellipse(0,0,rx,ry,0,t0,t1);
-              ctx.strokeStyle=`rgba(${o.glowRgb},${op.toFixed(3)})`;
-              ctx.lineWidth=1.5-i*0.4;
+              ctx.ellipse(0, 0, rx, ry, 0, t0, t1);
+              ctx.strokeStyle = `rgba(${o.glowRgb},${op.toFixed(3)})`;
+              ctx.lineWidth = 1.0;
               ctx.setLineDash([]);
               ctx.stroke();
               ctx.restore();
             }
+
+            /* head 점 */
+            ctx.beginPath();
+            ctx.arc(hx, hy, 2.5, 0, Math.PI*2);
+            ctx.fillStyle = `rgba(${o.glowRgb},${o.glowOp})`;
+            ctx.fill();
           });
+
           requestAnimationFrame(loop);
         }
         requestAnimationFrame(loop);
