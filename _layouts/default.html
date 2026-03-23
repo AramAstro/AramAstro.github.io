@@ -1,0 +1,201 @@
+---
+layout: compress
+---
+<!doctype html>
+{% include origin-type.html %}
+{% include lang.html %}
+{% if site.theme_mode %}
+  {% capture prefer_mode %}data-mode="{{ site.theme_mode }}"{% endcapture %}
+{% endif %}
+<html lang="{{ page.lang | default: site.alt_lang | default: site.lang }}" {{ prefer_mode }}>
+  {% include head.html lang=lang %}
+  <body>
+
+    <!-- ── 별 + 궤도 배경 ── -->
+    <canvas id="orbitCanvas" style="position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:0;"></canvas>
+    <div id="starLayer" style="position:fixed;inset:0;pointer-events:none;z-index:0;"></div>
+    <style>
+      @keyframes twinkle {
+        0%, 100% { opacity: var(--op-min); transform: scale(0.85); }
+        50%       { opacity: var(--op-max); transform: scale(1.15); }
+      }
+      .star-dot {
+        position: absolute; border-radius: 50%;
+        animation: twinkle var(--dur) ease-in-out infinite;
+        animation-delay: var(--delay);
+      }
+    </style>
+    <script>
+      (function() {
+        const canvas = document.getElementById('orbitCanvas');
+        const ctx    = canvas.getContext('2d');
+        const sl     = document.getElementById('starLayer');
+
+        function resize() {
+          canvas.width  = window.innerWidth;
+          canvas.height = window.innerHeight;
+        }
+        resize();
+        window.addEventListener('resize', resize);
+
+        /* ── 별 ── */
+        const TWINKLE_SPEED = 0.7;
+        const ST = [
+          { color:'#c0392b', freq:52,  size:[1.2,2.0], opMax:0.55, opMin:0.08, dur:[4,8] },
+          { color:'#d35400', freq:22,  size:[1.4,2.2], opMax:0.60, opMin:0.09, dur:[4,7] },
+          { color:'#c9960a', freq:13,  size:[1.6,2.4], opMax:0.65, opMin:0.10, dur:[3,7] },
+          { color:'#d4c87a', freq:7,   size:[1.8,2.6], opMax:0.65, opMin:0.10, dur:[3,6] },
+          { color:'#d8d8f0', freq:4,   size:[2.0,2.8], opMax:0.70, opMin:0.12, dur:[3,6] },
+          { color:'#a8b8e8', freq:1.5, size:[2.2,3.2], opMax:0.75, opMin:0.13, dur:[2,5] },
+          { color:'#7090e0', freq:0.5, size:[2.8,3.8], opMax:0.85, opMin:0.15, dur:[2,4] },
+        ];
+        const rand = (a,b) => a + Math.random()*(b-a);
+        const pool = [];
+        ST.forEach(s => { for(let i=0;i<Math.round(s.freq);i++) pool.push(s); });
+        const placed = [];
+        let att = 0;
+        while(placed.length < 28 && att < 2000) {
+          att++;
+          const x = rand(2,98), y = rand(2,96);
+          if(placed.every(p => Math.hypot(p.x-x,p.y-y) > 7)) {
+            const s = pool[Math.floor(Math.random()*pool.length)];
+            placed.push({x,y,r:rand(s.size[0],s.size[1]),s});
+          }
+        }
+        placed.forEach(({x,y,r,s}) => {
+          const d = document.createElement('div');
+          d.className = 'star-dot';
+          const dur = (rand(s.dur[0],s.dur[1])/TWINKLE_SPEED).toFixed(1);
+          d.style.cssText = [
+            `left:${x}%`,`top:${y}%`,
+            `width:${r*2}px`,`height:${r*2}px`,
+            `margin-left:-${r}px`,`margin-top:-${r}px`,
+            `background:${s.color}`,
+            `--dur:${dur}s`,
+            `--delay:-${rand(0,7).toFixed(1)}s`,
+            `--op-max:${s.opMax}`,`--op-min:${s.opMin}`
+          ].join(';');
+          sl.appendChild(d);
+        });
+
+        /* ── 궤도 ── */
+        const ORBITS = [
+          { cxR:0.96, cyR:1.22, rxR:0.52, ryR:0.40, rot:-0.06, period:20, glowArc:0.22, dashColor:[148,158,172], dashOp:0.22, glowRgb:'138,152,170', glowOp:0.82 },
+          { cxR:0.94, cyR:1.16, rxR:0.70, ryR:0.60, rot:0.10,  period:30, glowArc:0.18, dashColor:[168,128,100], dashOp:0.17, glowRgb:'182,122,82',  glowOp:0.68 },
+          { cxR:0.90, cyR:1.18, rxR:0.95, ryR:0.88, rot:0.04,  period:42, glowArc:0.14, dashColor:[175,88,72],   dashOp:0.13, glowRgb:'192,74,58',   glowOp:0.52 },
+        ];
+
+        function isOnScreen(cx,cy,rx,ry,rot,a,m=20) {
+          const ex=rx*Math.cos(a), ey=ry*Math.sin(a);
+          const x=cx+ex*Math.cos(rot)-ey*Math.sin(rot);
+          const y=cy+ex*Math.sin(rot)+ey*Math.cos(rot);
+          return x>=-m&&x<=window.innerWidth+m&&y>=-m&&y<=window.innerHeight+m;
+        }
+
+        function drawDashed() {
+          const W=canvas.width, H=canvas.height;
+          ORBITS.forEach(o => {
+            const [r,g,b]=o.dashColor;
+            ctx.save();
+            ctx.setLineDash([5,11]);
+            ctx.strokeStyle=`rgba(${r},${g},${b},${o.dashOp})`;
+            ctx.lineWidth=0.9;
+            ctx.translate(o.cxR*W,o.cyR*H);
+            ctx.rotate(o.rot);
+            ctx.beginPath();
+            ctx.ellipse(0,0,o.rxR*W,o.ryR*H,0,0,Math.PI*2);
+            ctx.stroke();
+            ctx.restore();
+          });
+        }
+
+        let startTs=null;
+        function loop(ts) {
+          if(!startTs) startTs=ts;
+          const elapsed=(ts-startTs)/1000;
+          const W=canvas.width, H=canvas.height;
+          ctx.clearRect(0,0,W,H);
+          drawDashed();
+          ORBITS.forEach(o => {
+            const cx=o.cxR*W, cy=o.cyR*H, rx=o.rxR*W, ry=o.ryR*H;
+            const progress=(elapsed/o.period)%1.0;
+            const headAngle=-progress*Math.PI*2;
+            const tailSpan=o.glowArc*Math.PI*2;
+            const STEPS=22;
+            for(let i=0;i<STEPS;i++) {
+              const t1=headAngle+(tailSpan*i/STEPS);
+              const t0=headAngle+(tailSpan*(i+1)/STEPS);
+              const tMid=(t0+t1)/2;
+              if(!isOnScreen(cx,cy,rx,ry,o.rot,tMid)) continue;
+              const frac=(i+1)/STEPS;
+              const op=o.glowOp*Math.pow(frac,1.4);
+              ctx.save();
+              ctx.translate(cx,cy);
+              ctx.rotate(o.rot);
+              ctx.beginPath();
+              ctx.ellipse(0,0,rx,ry,0,t0,t1);
+              ctx.strokeStyle=`rgba(${o.glowRgb},${op.toFixed(3)})`;
+              ctx.lineWidth=1.5-i*0.04;
+              ctx.setLineDash([]);
+              ctx.stroke();
+              ctx.restore();
+            }
+          });
+          requestAnimationFrame(loop);
+        }
+        requestAnimationFrame(loop);
+      })();
+    </script>
+    <!-- ── 별 + 궤도 배경 끝 ── -->
+
+    {% include sidebar.html lang=lang %}
+    <div id="main-wrapper" class="d-flex justify-content-center">
+      <div class="container d-flex flex-column px-xxl-5">
+        {% include topbar.html lang=lang %}
+        <div class="row flex-grow-1">
+          <main aria-label="Main Content" class="col-12 col-lg-11 col-xl-9 px-md-4">
+            {% if layout.layout == 'default' %}
+              {% include refactor-content.html content=content lang=lang %}
+            {% else %}
+              {{ content }}
+            {% endif %}
+          </main>
+          <aside aria-label="Panel" id="panel-wrapper" class="col-xl-3 ps-2 text-muted">
+            <div class="access">
+              {% include_cached update-list.html lang=lang %}
+              {% include_cached trending-tags.html lang=lang %}
+            </div>
+            {% for _include in layout.panel_includes %}
+              {% assign _include_path = _include | append: '.html' %}
+              {% include {{ _include_path }} lang=lang %}
+            {% endfor %}
+          </aside>
+        </div>
+        <div class="row">
+          <div id="tail-wrapper" class="col-12 col-lg-11 col-xl-9 px-md-4">
+            {% for _include in layout.tail_includes %}
+              {% assign _include_path = _include | append: '.html' %}
+              {% include {{ _include_path }} lang=lang %}
+            {% endfor %}
+            {% include_cached footer.html lang=lang %}
+          </div>
+        </div>
+        {% include_cached search-results.html lang=lang %}
+      </div>
+      <aside aria-label="Scroll to Top">
+        <button id="back-to-top" type="button" class="btn btn-lg btn-box-shadow">
+          <i class="fas fa-angle-up"></i>
+        </button>
+      </aside>
+    </div>
+    <div id="mask" class="d-none position-fixed w-100 h-100 z-1"></div>
+    {% if site.pwa.enabled %}
+      {% include_cached notification.html lang=lang %}
+    {% endif %}
+    {% for _include in layout.script_includes %}
+      {% assign _include_path = _include | append: '.html' %}
+      {% include {{ _include_path }} %}
+    {% endfor %}
+    {% include_cached search-loader.html lang=lang %}
+  </body>
+</html>
