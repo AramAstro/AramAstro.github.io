@@ -77,9 +77,9 @@
         });
 
         const ORBITS = [
-          { cxR:0.96, cyR:1.22, rxR:0.52, ryR:0.40, rot:-0.06, period:20, glowArc:0.06, dashColor:[148,158,172], dashOp:0.22, glowRgb:'138,152,170', glowOp:0.82 },
-          { cxR:0.94, cyR:1.16, rxR:0.70, ryR:0.60, rot:0.10,  period:30, glowArc:0.05, dashColor:[168,128,100], dashOp:0.17, glowRgb:'182,122,82',  glowOp:0.68 },
-          { cxR:0.90, cyR:1.18, rxR:0.95, ryR:0.88, rot:0.04,  period:42, glowArc:0.04, dashColor:[175,88,72],   dashOp:0.13, glowRgb:'192,74,58',   glowOp:0.52 },
+          { cxR:0.96, cyR:1.22, rxR:0.52, ryR:0.40, rot:-0.06, period:20, glowArc:0.015, dashColor:[148,158,172], dashOp:0.22, glowRgb:'138,152,170', glowOp:0.82 },
+          { cxR:0.94, cyR:1.16, rxR:0.70, ryR:0.60, rot:0.10,  period:30, glowArc:0.012, dashColor:[168,128,100], dashOp:0.17, glowRgb:'182,122,82',  glowOp:0.68 },
+          { cxR:0.90, cyR:1.18, rxR:0.95, ryR:0.88, rot:0.04,  period:42, glowArc:0.010, dashColor:[175,88,72],   dashOp:0.13, glowRgb:'192,74,58',   glowOp:0.52 },
         ];
 
         function isOnScreen(cx,cy,rx,ry,rot,a,m=20) {
@@ -117,8 +117,8 @@
             const cx=o.cxR*W, cy=o.cyR*H, rx=o.rxR*W, ry=o.ryR*H;
             const progress=(elapsed/o.period)%1.0;
             const headAngle=-progress*Math.PI*2;
-            const tailSpan=o.glowArc*Math.PI*2;
-            const STEPS=10;
+            const tailSpan=0.08;
+            const STEPS=5;
             for(let i=0;i<STEPS;i++) {
               const t1=headAngle+(tailSpan*i/STEPS);
               const t0=headAngle+(tailSpan*(i+1)/STEPS);
