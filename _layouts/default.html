@@ -89,22 +89,18 @@
           return x>=-m&&x<=window.innerWidth+m&&y>=-m&&y<=window.innerHeight+m;
         }
 
-        function drawDashed() {
+      function drawDashed() {
           const W=canvas.width, H=canvas.height;
           ORBITS.forEach(o => {
-            const cx=o.cxR*W, cy=o.cyR*H, rx=o.rxR*W, ry=o.ryR*H;
-            const progress=(elapsed/o.period)%1.0;
-            const headAngle=-progress*Math.PI*2;
-            const t0=headAngle;
-            const t1=headAngle+0.15;
+            const [r,g,b]=o.dashColor;
             ctx.save();
-            ctx.translate(cx,cy);
+            ctx.setLineDash([5,11]);
+            ctx.strokeStyle=`rgba(${r},${g},${b},${o.dashOp})`;
+            ctx.lineWidth=0.9;
+            ctx.translate(o.cxR*W,o.cyR*H);
             ctx.rotate(o.rot);
             ctx.beginPath();
-            ctx.ellipse(0,0,rx,ry,0,t0,t1);
-            ctx.strokeStyle=`rgba(${o.glowRgb},0.8)`;
-            ctx.lineWidth=2;
-            ctx.setLineDash([]);
+            ctx.ellipse(0,0,o.rxR*W,o.ryR*H,0,0,Math.PI*2);
             ctx.stroke();
             ctx.restore();
           });
